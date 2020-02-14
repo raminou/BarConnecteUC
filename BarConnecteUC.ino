@@ -4,6 +4,7 @@
 
 #define DEBUG 1
 #define NB_INGREDIENT 4
+#define TIME_PERCENT 100
 
 typedef enum {
     STATUS_QUEUE = 0,
@@ -37,26 +38,26 @@ HTTPClient http;
 const float weight_init = 5.5;
 const float weight_full = 200.0;
 float weight;
-DFRobot_HX711 MyScale(D1, D2);
+DFRobot_HX711 MyScale(D2, D3);
 
 //const char* key_ingredients[NB_INGREDIENT] = {"water", "lemonade", "grenadine", "mint"};
 Ingredient_t ingredients[NB_INGREDIENT] = {
   {
     .name= "water",
     .value= 0,
-    .pin= D3
+    .pin= D8
   }, {
     .name= "lemonade",
     .value= 0,
-    .pin= D5
+    .pin= D7
   }, {
     .name= "grenadine",
     .value= 0,
-    .pin= D6
+    .pin= D5
   }, {
     .name= "mint",
     .value= 0,
-    .pin= D7
+    .pin= D6
   }
 };
 
@@ -169,7 +170,14 @@ char analyzeHttpResponse(const char* url, int code) {
 
 void fillGlass() {
   for(int i = 0; i < NB_INGREDIENT; i++) {
-    fillIngredient(&(ingredients[i]));
+    if((strcmp(ingredients[i].name, "mint") == 0) || (strcmp(ingredients[i].name, "grenadine") == 0 )){
+      fillIngredient(&(ingredients[i]));
+    }
+  }
+  for(int i = 0; i < NB_INGREDIENT; i++) {
+    if((strcmp(ingredients[i].name, "water") == 0) || (strcmp(ingredients[i].name, "lemonade") == 0 )){
+      fillIngredient(&(ingredients[i]));
+    }
   }
 }
 
@@ -189,27 +197,33 @@ void fillIngredient(Ingredient_t* ing) {
   Serial.print(weight_before);
   Serial.print(" to ");
   Serial.println(threshold + weight_before);
-  
 
-  while(weight < threshold + weight_before) {
-    if(weight <= weight_init) {
-      Serial.println("");
-      Serial.print("ERROR weight < weight init: ");
-      Serial.print(weight);
-      Serial.print(" < ");
-      Serial.println(weight_init);
-      error = 1;
-      break;
-    }
-    
-    if(ing->pin != -1)
+  if ((strcmp(ing->name, "water")==0) || (strcmp(ing->name, "lemonade")==0)){
+    int time_to_pump = ing->value * TIME_PERCENT; // ms
+    if(ing->pin != -1){
       digitalWrite(ing->pin, HIGH);
-    weight = MyScale.readWeight();
-    Serial.print(weight);
-    Serial.println("g loop");
-    yield();
+    }
+    delay(time_to_pump);
+  } else {
+    while(weight < threshold + weight_before) {
+      if(weight <= weight_init) {
+        Serial.println("");
+        Serial.print("ERROR weight < weight init: ");
+        Serial.print(weight);
+        Serial.print(" < ");
+        Serial.println(weight_init);
+        error = 1;
+        break;
+      }
+    
+      if(ing->pin != -1)
+        digitalWrite(ing->pin, HIGH);
+      weight = MyScale.readWeight();
+      Serial.print(weight);
+      Serial.println("g loop");
+      yield();
+    }
   }
-
   if(ing->pin != -1)
     digitalWrite(ing->pin, LOW);
   Serial.println("Filled");
@@ -217,7 +231,6 @@ void fillIngredient(Ingredient_t* ing) {
 
 void setup() {
   Serial.begin(9600);
-
   // Connection to Wifi
   Serial.print("Connecting to ");
   Serial.println(SSID);
