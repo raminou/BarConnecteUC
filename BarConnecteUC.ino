@@ -25,8 +25,8 @@ char buffer_msg[100] = {};
 const char* status_name[] = {"queue", "prepare", "done", "served", "error"};
 
 // WiFi Config
-const char* SSID = "mi_tybau";
-const char* password = "azertyuiop";
+const char* SSID = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
 const char* URL_GET_FIRST = "http://vps127565.ovh.net:8080/drink/first";
 const char* URL_CHANGE_STATUS = "http://vps127565.ovh.net:8080/drink/%s";
 
